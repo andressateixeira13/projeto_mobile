@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
+import 'package:projeto_mobile/activity.dart';
+
 class UpdateActivityPage extends StatefulWidget {
   final String activityName;
 
-  UpdateActivityPage({required this.activityName});
+  UpdateActivityPage({required this.activityName, required Activity activity});
 
   @override
   _UpdateActivityPageState createState() => _UpdateActivityPageState();
@@ -30,7 +32,7 @@ class _UpdateActivityPageState extends State<UpdateActivityPage> {
       backgroundColor: Colors.grey[200],
       appBar: AppBar(
         title: Text(widget.activityName),
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.blueGrey,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

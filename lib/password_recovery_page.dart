@@ -4,34 +4,27 @@ class PasswordRecoveryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
       appBar: AppBar(
         title: Text('Recuperar Senha'),
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.blueGrey,
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+      backgroundColor: Colors.grey[200],
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Center(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Text(
-                'Recuperar Senha',
-                style: TextStyle(fontSize: 24, color: Colors.blue),
-              ),
-              SizedBox(height: 20),
+            mainAxisSize: MainAxisSize.min,
+            children: [
               TextField(
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: InputDecoration(labelText: 'E-mail'),
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  // Implementar lógica de recuperação de senha
+                  // Implemente a lógica de recuperação de senha aqui
+                  Navigator.pop(context);
                 },
-                child: Text('Enviar'),
+                child: Text('Enviar E-mail de Recuperação'),
               ),
             ],
           ),
