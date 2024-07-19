@@ -12,7 +12,7 @@ class ActivityDetailsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[200],
       appBar: AppBar(
-        title: Text(activity.title),
+        title: Text(activity.nomeAtiv), // Atualizado para nomeAtiv
         backgroundColor: Colors.blueGrey,
       ),
       body: Padding(
@@ -20,11 +20,11 @@ class ActivityDetailsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Descrição: ${activity.description}', style: TextStyle(fontSize: 16)),
+            Text('Descrição: ${activity.descricao}', style: TextStyle(fontSize: 16)),
             SizedBox(height: 8),
-            Text('Local: ${activity.location}', style: TextStyle(fontSize: 16)),
+            Text('Local: ${activity.ambiente}', style: TextStyle(fontSize: 16)), // Ajustado se necessário
             SizedBox(height: 8),
-            Text('Data: ${activity.date}', style: TextStyle(fontSize: 16)),
+            Text('Data: ${activity.data}', style: TextStyle(fontSize: 16)),
           ],
         ),
       ),
@@ -33,7 +33,7 @@ class ActivityDetailsPage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => UpdateActivityPage(activity: activity, activityName: '',),
+              builder: (context) => UpdateActivityPage(activityName: activity.nomeAtiv, activity: activity), // Atualizado
             ),
           );
         },

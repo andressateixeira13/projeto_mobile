@@ -6,8 +6,9 @@ import 'package:projeto_mobile/activity.dart';
 
 class UpdateActivityPage extends StatefulWidget {
   final String activityName;
+  final Activity activity; // Adicionado para receber o objeto Activity
 
-  UpdateActivityPage({required this.activityName, required Activity activity});
+  UpdateActivityPage({required this.activityName, required this.activity}); // Atualizado
 
   @override
   _UpdateActivityPageState createState() => _UpdateActivityPageState();
