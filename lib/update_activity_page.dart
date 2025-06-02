@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 import 'dart:io';
-
 import 'package:projeto_mobile/activity.dart';
 
 class UpdateActivityPage extends StatefulWidget {
   final String activityName;
-  final Activity activity; // Adicionado para receber o objeto Activity
+  final Activity activity;
 
-  UpdateActivityPage({required this.activityName, required this.activity}); // Atualizado
+  UpdateActivityPage({required this.activityName, required this.activity});
 
   @override
   _UpdateActivityPageState createState() => _UpdateActivityPageState();
@@ -16,6 +16,8 @@ class UpdateActivityPage extends StatefulWidget {
 
 class _UpdateActivityPageState extends State<UpdateActivityPage> {
   final ImagePicker _picker = ImagePicker();
+  final TextEditingController _descricaoController = TextEditingController();
+  String _situacao = 'Concluída';
   List<XFile> _images = [];
 
   Future<void> _pickImage() async {
@@ -24,6 +26,43 @@ class _UpdateActivityPageState extends State<UpdateActivityPage> {
       setState(() {
         _images.addAll(pickedImages);
       });
+    }
+  }
+
+  Future<void> _enviarRetorno() async {
+    if (_images.isEmpty || _descricaoController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Preencha todos os campos e adicione uma foto.')),
+      );
+      return;
+    }
+
+    try {
+      final uri = Uri.parse('http://10.0.2.2:8080/retornos');
+      final request = http.MultipartRequest('POST', uri)
+        ..fields['atividadeId'] = widget.activity.id.toString()
+        ..fields['descricao'] = _descricaoController.text
+        ..fields['situacao'] = _situacao;
+
+      File imageFile = File(_images.first.path);
+      request.files.add(await http.MultipartFile.fromPath('foto', imageFile.path));
+
+      final response = await request.send();
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Retorno enviado com sucesso!')),
+        );
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao enviar retorno: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro: $e')),
+      );
     }
   }
 
@@ -46,6 +85,7 @@ class _UpdateActivityPageState extends State<UpdateActivityPage> {
             ),
             SizedBox(height: 10),
             TextField(
+              controller: _descricaoController,
               decoration: InputDecoration(
                 labelText: 'Descrição',
                 border: OutlineInputBorder(),
@@ -72,9 +112,7 @@ class _UpdateActivityPageState extends State<UpdateActivityPage> {
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                // Implement update logic
-              },
+              onPressed: _enviarRetorno,
               child: Text('Atualizar'),
             ),
           ],

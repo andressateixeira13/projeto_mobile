@@ -17,9 +17,13 @@ class ActivityService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
+        print('entrando no 200');
+        print('Dados recebidos do backend:');
+        for (var item in data) {
+          print(item); // <- imprime cada item do JSON como mapa
+        }
         return data.map((json) => Activity.fromJson(json)).toList();
       } else if (response.statusCode == 204) {
-        // No content, return an empty list
         return [];
       } else {
         throw Exception('Failed to load activities: ${response.statusCode}');

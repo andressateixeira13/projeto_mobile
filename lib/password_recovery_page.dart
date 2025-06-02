@@ -5,7 +5,7 @@ class PasswordRecoveryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Recuperar Senha'),
+        title: Text('Redefinir Senha'),
         backgroundColor: Colors.blueGrey,
       ),
       backgroundColor: Colors.grey[200],
@@ -16,15 +16,18 @@ class PasswordRecoveryPage extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                decoration: InputDecoration(labelText: 'E-mail'),
+                decoration: InputDecoration(labelText: 'CPF'),
+              ),
+              TextField(
+                decoration: InputDecoration(labelText: 'Senha Nova'),
               ),
               SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  // Implemente a lógica de recuperação de senha aqui
+                  // Implementar
                   Navigator.pop(context);
                 },
-                child: Text('Enviar E-mail de Recuperação'),
+                child: Text('Redefinir'),
               ),
             ],
           ),

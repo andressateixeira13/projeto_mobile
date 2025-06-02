@@ -2,10 +2,10 @@ class Activity {
   final int id;
   final String nomeAtiv;
   final String descricao;
-  final String data;
-  final int tipoAtividade;
-  final int funcionario;
-  final int ambiente;
+  final String? data;
+  final int? tipoAtividade;
+  final int? funcionario;
+  final int? ambiente;
 
   Activity({
     required this.id,
@@ -20,8 +20,8 @@ class Activity {
   factory Activity.fromJson(Map<String, dynamic> json) {
     return Activity(
       id: json['id'],
-      nomeAtiv: json['nomeAtiv'],
-      descricao: json['descricao'],
+      nomeAtiv: json['nomeAtiv'] ?? 'Sem nome',
+      descricao: json['descricao'] ?? 'Sem descrição',
       data: json['data'],
       tipoAtividade: json['tipoAtividade'],
       funcionario: json['funcionario'],

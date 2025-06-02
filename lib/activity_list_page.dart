@@ -17,6 +17,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
   bool isLoading = true;
   late String token;
   late String cpf;
+  late String nome;
 
   @override
   void initState() {
@@ -77,7 +78,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
               const PopupMenuItem<String>(
                 value: 'settings',
-                child: Text('Configurações'),
+                child: Text('Dados do usuário'),
               ),
               const PopupMenuItem<String>(
                 value: 'logout',
