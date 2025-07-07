@@ -5,6 +5,28 @@ import 'activity.dart';
 class ActivityService {
   final String baseUrl = "http://10.0.2.2:8080";
 
+  Future<String> fetchFuncionarioNomeByCpf(String cpf, String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/funcionarios/$cpf'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        return data['nome'] ?? 'Sem nome';
+      } else {
+        throw Exception('Erro ao buscar nome do funcionário: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Erro ao buscar nome: $e');
+      throw Exception('Erro ao buscar nome');
+    }
+  }
+
   Future<List<Activity>> fetchActivitiesByFuncionario(String cpf, String token) async {
     try {
       final response = await http.get(
@@ -13,24 +35,23 @@ class ActivityService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      );
+      ).timeout(Duration(seconds: 90));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        print('entrando no 200');
         print('Dados recebidos do backend:');
         for (var item in data) {
-          print(item); // <- imprime cada item do JSON como mapa
+          print(item);
         }
         return data.map((json) => Activity.fromJson(json)).toList();
       } else if (response.statusCode == 204) {
         return [];
       } else {
-        throw Exception('Failed to load activities: ${response.statusCode}');
+        throw Exception('Erro ao carregar atividades: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error fetching activities: $e');
-      throw Exception('Error fetching activities');
+      print('Erro ao buscar atividades: $e');
+      throw Exception('Erro ao buscar atividades');
     }
   }
 }

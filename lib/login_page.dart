@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'activity_list_page.dart';
 import 'password_recovery_page.dart';
 import 'auth_service.dart';
+import 'user_session.dart';
+import 'activity_service.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -12,6 +14,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _cpfController = TextEditingController();
   final TextEditingController _senhaController = TextEditingController();
   final AuthService _authService = AuthService();
+  final ActivityService _activityService = ActivityService();
   bool _isLoading = false;
   String _errorMessage = '';
 
@@ -25,8 +28,17 @@ class _LoginPageState extends State<LoginPage> {
     final String senha = _senhaController.text;
 
     try {
+      // Realiza login e salva token/cpf na UserSession
       await _authService.login(cpf, senha);
+      final token = await UserSession.getToken() ?? '';
 
+      // Busca o nome do funcionário
+      final nome = await _activityService.fetchFuncionarioNomeByCpf(cpf, token);
+
+      // Salva o nome na sessão
+      await UserSession.setNome(nome);
+
+      // Navega para a tela principal
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => ActivityListPage()),
@@ -49,10 +61,7 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'Login',
-                style: TextStyle(fontSize: 20, color: Colors.black),
-              ),
+              Text('Login', style: TextStyle(fontSize: 20, color: Colors.black)),
               SizedBox(height: 20),
               TextField(
                 controller: _cpfController,

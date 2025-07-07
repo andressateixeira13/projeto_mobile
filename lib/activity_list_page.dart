@@ -5,6 +5,7 @@ import 'update_activity_page.dart';
 import 'login_page.dart';
 import 'activity_service.dart';
 import 'user_session.dart';
+import 'package:intl/intl.dart';
 
 class ActivityListPage extends StatefulWidget {
   @override
@@ -14,10 +15,12 @@ class ActivityListPage extends StatefulWidget {
 class _ActivityListPageState extends State<ActivityListPage> {
   final ActivityService activityService = ActivityService();
   List<Activity> activities = [];
+  List<Activity> filteredActivities = [];
   bool isLoading = true;
   late String token;
   late String cpf;
-  late String nome;
+  String nome = '';
+  String currentFilter = 'Atividades do dia';
 
   @override
   void initState() {
@@ -29,89 +32,143 @@ class _ActivityListPageState extends State<ActivityListPage> {
     try {
       token = await UserSession.getToken() ?? '';
       cpf = await UserSession.getCpf() ?? '';
-      fetchActivities();
+      nome = await UserSession.getNome() ?? '';
+      await fetchActivities();
     } catch (e) {
-      print('Error initializing user session: $e');
-      // Handle error or show an appropriate message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar sessão: $e')),
+      );
+      setState(() => isLoading = false);
     }
   }
 
-  void fetchActivities() async {
+  Future<void> fetchActivities() async {
+    setState(() { isLoading = true; });
     try {
-      List<Activity> fetchedActivities = await activityService.fetchActivitiesByFuncionario(cpf, token);
+      // NO ActivityService, adicione .timeout(Duration(seconds: 30))
+      List<Activity> fetched = await activityService
+          .fetchActivitiesByFuncionario(cpf, token);
       setState(() {
-        activities = fetchedActivities;
+        activities = fetched;
+        _applyFilter(currentFilter);
         isLoading = false;
       });
     } catch (e) {
       setState(() {
         isLoading = false;
+        activities = [];
+        filteredActivities = [];
       });
-      print('Exception: Failed to load activities');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao buscar atividades. Tente novamente.')),
+      );
     }
+  }
+
+  void _applyFilter(String filter) {
+    DateTime hoje = DateTime.now();
+    DateTime diaLimpo = DateTime(hoje.year, hoje.month, hoje.day);
+
+    setState(() {
+      currentFilter = filter;
+      filteredActivities = activities.where((a) {
+        if (a.data == null) return false;
+        DateTime d = DateTime.parse(a.data!);
+        DateTime dClean = DateTime(d.year, d.month, d.day);
+        switch (filter) {
+          case 'Atividades do dia':
+            return dClean == diaLimpo && (a.situacao == null || a.situacao!.isEmpty);
+          case 'Atividades futuras':
+            return dClean.isAfter(diaLimpo) && (a.situacao == null || a.situacao!.isEmpty);
+          case 'Atividades atrasadas':
+            return dClean.isBefore(diaLimpo) && (a.situacao == null || a.situacao!.isEmpty);
+          case 'Atividades concluídas':
+            return a.situacao != null && a.situacao!.isNotEmpty;
+          default:
+            return true;
+        }
+      }).toList();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
       appBar: AppBar(
-        title: Text('Minhas Atividades'),
+        title: Text('Olá, $nome'),
         backgroundColor: Colors.blueGrey,
         actions: [
-          PopupMenuButton<String>(
-            onSelected: (String result) {
-              switch (result) {
-                case 'settings':
-                // Navegue para a página de configurações
-                  break;
-                case 'logout':
-                  UserSession.clear();  // Clear user session
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => LoginPage()),
-                        (Route<dynamic> route) => false,
-                  );
-                  break;
-              }
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () {
+              UserSession.clear();
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => LoginPage()),
+                    (route) => false,
+              );
             },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'settings',
-                child: Text('Dados do usuário'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'logout',
-                child: Text('Sair'),
-              ),
-            ],
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Center(
-                child: Text(
-                  'Usuário',
-                  style: TextStyle(fontSize: 16),
-                ),
-              ),
-            ),
           ),
         ],
       ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            Container(
+              height: 80,
+              color: Colors.blueGrey,
+              alignment: Alignment.centerLeft,
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'Menu',
+                style: TextStyle(color: Colors.white, fontSize: 20),
+              ),
+            ),
+            ...[
+              'Atividades do dia',
+              'Atividades futuras',
+              'Atividades concluídas',
+              'Atividades atrasadas'
+            ].map((f) => ListTile(
+              title: Text(f),
+              onTap: () {
+                Navigator.pop(context);
+                _applyFilter(f);
+              },
+            )),
+          ],
+        ),
+      ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
-          : activities.isEmpty
-          ? Center(child: Text('Nenhuma atividade encontrada.'))
+          : filteredActivities.isEmpty
+          ? Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Nenhuma atividade encontrada.'),
+            SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: fetchActivities,
+              child: Text('Tentar novamente'),
+            ),
+          ],
+        ),
+      )
           : ListView.builder(
-        itemCount: activities.length,
-        itemBuilder: (context, index) {
+        itemCount: filteredActivities.length,
+        itemBuilder: (ctx, idx) {
+          final a = filteredActivities[idx];
           return Card(
+            margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: ListTile(
-              title: Text(activities[index].nomeAtiv),
+              title: Text(a.nomeAtiv),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Descrição: ${activities[index].descricao}'),
-                  Text('Data: ${activities[index].data}'),
+                  Text('Descrição: ${a.descricao}'),
+                  Text('Data: ${DateFormat('dd/MM/yyyy').format(DateTime.parse(a.data!))}'),
                 ],
               ),
               trailing: Icon(Icons.arrow_forward),
@@ -119,7 +176,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ActivityDetailsPage(activity: activities[index]),
+                    builder: (_) => ActivityDetailsPage(activity: a),
                   ),
                 );
               },
@@ -127,7 +184,9 @@ class _ActivityListPageState extends State<ActivityListPage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => UpdateActivityPage(activityName: activities[index].nomeAtiv, activity: activities[index]),
+                    builder: (_) => UpdateActivityPage(
+                        activityName: a.nomeAtiv, activity: a
+                    ),
                   ),
                 );
               },
