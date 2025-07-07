@@ -3,7 +3,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:io';
 
 import 'activity.dart';
 import 'update_activity_page.dart';
