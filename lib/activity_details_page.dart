@@ -3,6 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'activity.dart';
 import 'update_activity_page.dart';
@@ -48,10 +49,17 @@ class _ActivityDetailsPageState extends State<ActivityDetailsPage> {
         Ambiente amb = Ambiente.fromJson(data);
 
         List<geocoding.Location> locs = [];
+
         try {
-          locs = await geocoding.locationFromAddress(amb.complemento);
+          locs = await geocoding.locationFromAddress(amb.complemento)
+              .timeout(Duration(seconds: 15));
         } catch (_) {
-          locs = await geocoding.locationFromAddress(amb.cep);
+          try {
+            locs = await geocoding.locationFromAddress(amb.cep)
+                .timeout(Duration(seconds: 15));
+          } catch (e) {
+            debugPrint('Erro ao buscar coordenadas: $e');
+          }
         }
 
         setState(() {
@@ -65,11 +73,32 @@ class _ActivityDetailsPageState extends State<ActivityDetailsPage> {
         throw Exception('Erro ao carregar ambiente');
       }
     } catch (e) {
-      print('Erro ao carregar ambiente ou coordenadas: $e');
+      debugPrint('Erro ao carregar ambiente ou coordenadas: $e');
       setState(() {
         isLoading = false;
       });
     }
+  }
+
+  Future<Uint8List?> _carregarImagem() async {
+    try {
+      final url = widget.activity.foto!.replaceFirst('localhost', '10.0.2.2');
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        return response.bodyBytes;
+      } else {
+        debugPrint('Erro HTTP imagem: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Erro ao carregar imagem: $e');
+    }
+    return null;
   }
 
   Widget _buildInfoText(String label, String? value) {
@@ -153,7 +182,8 @@ class _ActivityDetailsPageState extends State<ActivityDetailsPage> {
                             Marker(
                               markerId: MarkerId('ambiente'),
                               position: coordenadas!,
-                              infoWindow: InfoWindow(title: widget.activity.nomeAtiv),
+                              infoWindow:
+                              InfoWindow(title: widget.activity.nomeAtiv),
                             ),
                           },
                         ),
@@ -180,24 +210,64 @@ class _ActivityDetailsPageState extends State<ActivityDetailsPage> {
                     if (widget.activity.situacao != null)
                       _buildInfoText('Situação', widget.activity.situacao),
                     if (widget.activity.descricaoSituacao != null)
-                      _buildInfoText('Descrição da Situação', widget.activity.descricaoSituacao),
+                      _buildInfoText('Descrição da Situação',
+                          widget.activity.descricaoSituacao),
                     if (widget.activity.foto != null && widget.activity.foto!.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 8.0),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            'http://10.0.2.2:8080/uploads/${widget.activity.foto!}',
-                            height: 200,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
+                        child: FutureBuilder<Uint8List?>(
+                          future: _carregarImagem(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return Center(child: CircularProgressIndicator());
+                            } else if (snapshot.hasError || snapshot.data == null) {
                               return Text('Erro ao carregar imagem.');
-                            },
-                          ),
+                            } else {
+                              return GestureDetector(
+                                onTap: () {
+                                  // Abre imagem em tela cheia
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => Dialog(
+                                      backgroundColor: Colors.black,
+                                      insetPadding: EdgeInsets.zero,
+                                      child: Stack(
+                                        children: [
+                                          InteractiveViewer(
+                                            child: Center(
+                                              child: Image.memory(
+                                                snapshot.data!,
+                                                fit: BoxFit.contain,
+                                              ),
+                                            ),
+                                          ),
+                                          Positioned(
+                                            top: 20,
+                                            right: 20,
+                                            child: IconButton(
+                                              icon: Icon(Icons.close, color: Colors.white, size: 30),
+                                              onPressed: () => Navigator.of(context).pop(),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.memory(
+                                    snapshot.data!,
+                                    height: 200,
+                                    width: double.infinity,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                              );
+                            }
+                          },
                         ),
                       ),
-
                   ],
                 ),
               ),

@@ -7,7 +7,7 @@
         <!-- CHAVE DA API DO GOOGLE MAPS -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyDKFVicxjfEVH7tvFPQDur2PMtAYm3AdHE" />
+            android:value="AIzaSyBQHd-QMfHLKO45xuY-ar_MylvID0jjzfw" />
 
         <activity
             android:name=".MainActivity"
